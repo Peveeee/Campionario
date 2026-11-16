@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/*
+ * Campionario — valori di stile.
+ * Bianco carta, grafite per il testo, pietra per il secondario, blu avio solo per le azioni.
+ * Gli stati hanno sempre colore + icona + parola: mai il solo colore.
+ */
+@theme {
+  --color-carta: #ffffff;
+  --color-nebbia: #f5f6f3;
+  --color-linea: #e4e5e1;
+  --color-linea-forte: #cfd1cb;
+  --color-grafite: #1f2328;
+  --color-pietra-scura: #5e645c;
+  --color-pietra: #8a8f87;
+  --color-avio: #2d4a6b;
+  --color-avio-scuro: #223a55;
+  --color-avio-velo: #e9eef4;
+
+  --color-bosco: #2f6b4f;
+  --color-bosco-velo: #e7f0ea;
+  --color-mattone: #a23b2c;
+  --color-mattone-velo: #f7e8e5;
+  --color-ocra: #87590a;
+  --color-ocra-velo: #f6edd6;
+  --color-prugna: #7a3b69;
+  --color-prugna-velo: #f2e6ef;
+  --color-neutro-velo: #eeefec;
+
+  --font-display: var(--font-bodoni), "Bodoni Moda", "Bodoni 72", Didot, "Libre Bodoni", Georgia, serif;
+  --font-sans: var(--font-instrument), "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Scala tipografica a rapporto 1,25 su base 15px. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.6rem;
+  --text-xl: 1.4375rem;
+  --text-xl--line-height: 1.8rem;
+  --text-2xl: 1.8125rem;
+  --text-2xl--line-height: 2.1rem;
+  --text-3xl: 2.3125rem;
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 3.5rem;
+  --text-4xl--line-height: 3.6rem;
+  --text-5xl: 4.5rem;
+  --text-5xl--line-height: 4.4rem;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+
+  --shadow-etichetta: 0 1px 2px rgb(31 35 40 / 0.08), 0 2px 8px rgb(31 35 40 / 0.06);
+  --shadow-pannello: 0 12px 40px rgb(31 35 40 / 0.14);
+
+  --ease-morbido: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-carta);
+    color: var(--color-grafite);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-avio);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: var(--color-avio-velo);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility cifre {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@utility titolo-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-optical-sizing: auto;
+}
+
+@keyframes dissolvenza {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sale {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes entra {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}

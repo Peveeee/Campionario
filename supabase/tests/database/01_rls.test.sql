@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(31);
+select plan(33);
 
 -- ---------------------------------------------------------------------------
 -- Dati: due utenti, quindi due studi creati dal trigger del primo accesso
@@ -13,7 +13,8 @@ values
   ('22222222-2222-2222-2222-222222222222', 'bruno@studio-b.it', 'authenticated', 'authenticated');
 
 select is(
-  (select count(*)::int from public.studi), 2,
+  (select count(distinct studio_id)::int from public.profili
+   where id in ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')), 2,
   'il primo accesso crea uno studio per utente'
 );
 select is(
@@ -24,7 +25,7 @@ select is(
 select is(
   (select s.nome from public.studi s join public.profili p on p.studio_id = s.id
    where p.id = '11111111-1111-1111-1111-111111111111'),
-  'Studio di anna',
+  'Studio di Anna',
   'nome provvisorio dello studio dall''email'
 );
 
@@ -36,7 +37,7 @@ begin
   insert into public.progetti (id, studio_id, nome) values ('b0000000-0000-0000-0000-000000000001', sb, 'Casa B');
   insert into public.stanze (id, studio_id, progetto_id, nome)
     values ('b0000000-0000-0000-0000-000000000002', sb, 'b0000000-0000-0000-0000-000000000001', 'Soggiorno');
-  insert into public.articoli (id, studio_id, progetto_id, stanza_id, nome, prezzo_cliente_centesimi)
+  insert into public.articoli (id, studio_id, progetto_id, stanza_id, nome, prezzo_cliente_unitario)
     values ('b0000000-0000-0000-0000-000000000003', sb, 'b0000000-0000-0000-0000-000000000001',
             'b0000000-0000-0000-0000-000000000002', 'Divano', 350000);
   insert into public.link_clienti (id, studio_id, progetto_id, token_hash)
@@ -107,7 +108,7 @@ select throws_ok(
 
 -- profili: non può promuoversi né cambiare studio
 select throws_ok(
-  $$ update public.profili set ruolo = 'membro' where id = '11111111-1111-1111-1111-111111111111' $$,
+  $$ update public.profili set ruolo = 'designer' where id = '11111111-1111-1111-1111-111111111111' $$,
   '42501', null, 'il ruolo non si modifica dal client'
 );
 
@@ -165,6 +166,9 @@ select is(
                      where a.attrelid = c.oid and a.attname = 'studio_id' and not a.attisdropped)),
   0, 'studio_id presente su tutte le tabelle di public'
 );
+
+select is(private.nome_provvisorio('anna.maria_rossi92@studio.it'), 'Studio di Anna Maria Rossi', 'nome provvisorio leggibile');
+select is(private.nome_provvisorio('1234@studio.it'), 'Studio di nuovo utente', 'nome provvisorio senza lettere');
 
 select * from finish();
 rollback;

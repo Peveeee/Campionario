@@ -1,20 +1,41 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 import { Shell } from "@/components/shell/shell";
-import { useSessione } from "@/dati/store";
+import { SessioneStudioProvider } from "@/dati/sessione-studio";
+import { creaClientServer } from "@/lib/supabase/server";
 
-export default function LayoutStudio({ children }: { children: ReactNode }) {
-  const sessione = useSessione();
-  const router = useRouter();
+/** "anna.maria_rossi@…" → "Anna Maria Rossi", come il nome provvisorio dello studio. */
+function nomeDaEmail(email: string) {
+  const parole = (email.split("@")[0] ?? "").replace(/[._+0-9-]+/g, " ").trim();
+  if (!parole) return email;
+  return parole.replace(/\S+/g, (p) => p[0]!.toUpperCase() + p.slice(1).toLowerCase());
+}
 
-  useEffect(() => {
-    if (sessione === null) router.replace("/accedi");
-  }, [sessione, router]);
+export default async function LayoutStudio({ children }: { children: ReactNode }) {
+  const supabase = await creaClientServer();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) redirect("/accedi");
 
-  // Finché il browser non ha letto la sessione non mostriamo nulla: niente lampi di contenuto sbagliato.
-  if (!sessione) return <div className="min-h-dvh" aria-busy="true" />;
+  const { data: profilo } = await supabase
+    .from("profili")
+    .select("id, nome, email, ruolo, studi(id, nome)")
+    .eq("id", data.claims.sub)
+    .single();
+  if (!profilo?.studi) redirect("/accedi?errore=profilo");
 
-  return <Shell>{children}</Shell>;
+  const sessione = {
+    utente: {
+      id: profilo.id,
+      nome: profilo.nome?.trim() || nomeDaEmail(profilo.email),
+      email: profilo.email,
+      ruolo: profilo.ruolo,
+    },
+    studio: { id: profilo.studi.id, nome: profilo.studi.nome },
+  };
+
+  return (
+    <SessioneStudioProvider valore={sessione}>
+      <Shell>{children}</Shell>
+    </SessioneStudioProvider>
+  );
 }

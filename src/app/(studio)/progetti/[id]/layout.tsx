@@ -30,13 +30,11 @@ export default function LayoutProgetto({ children }: { children: ReactNode }) {
 
   const idStanze = new Set(voce.stanze.map((s) => s.stanza.id));
   const articoli = leggiArticoli(archivio, sessione).filter((a) => idStanze.has(a.stanzaId));
-  const ordini = archivio.ordini.filter((o) => o.progettoId === id).length;
 
+  // Ordini e riepilogo restano nel codice ma fuori dal super mini MVP.
   const schede = [
     { href: `/progetti/${id}/schedario`, etichetta: "Schedario", conteggio: voce.articoli },
     { href: `/progetti/${id}/approvazioni`, etichetta: "Approvazioni", conteggio: voce.inAttesa },
-    { href: `/progetti/${id}/ordini`, etichetta: "Ordini", conteggio: ordini },
-    ...(sessione.ruolo === "titolare" ? [{ href: `/progetti/${id}/riepilogo`, etichetta: "Riepilogo", conteggio: undefined }] : []),
   ];
 
   return (

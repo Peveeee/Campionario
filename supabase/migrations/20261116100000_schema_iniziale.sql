@@ -2,7 +2,8 @@
 --
 -- Regole:
 --   * ogni tabella ha studio_id e RLS attiva;
---   * importi in centesimi interi (bigint), dimensioni in mm (integer);
+--   * importi in centesimi interi, quantità in centesimi di unità
+--     (1450 = 14,5 mq), dimensioni in mm: tutti integer, come in src/lib/;
 --   * le chiavi esterne includono studio_id, così una riga figlia non può
 --     puntare a un genitore di un altro studio;
 --   * il ruolo anon non ha alcun privilegio sulle tabelle: il cliente passa
@@ -18,16 +19,15 @@ grant usage on schema private to authenticated;
 -- ---------------------------------------------------------------------------
 -- Tipi
 -- ---------------------------------------------------------------------------
-create type public.ruolo_profilo as enum ('titolare', 'membro');
+-- Gli stessi valori di src/dominio/tipi.ts
+create type public.ruolo_profilo as enum ('titolare', 'designer');
+create type public.fase_progetto as enum ('concept', 'progetto', 'forniture', 'cantiere', 'chiuso');
+create type public.categoria_articolo as enum
+  ('arredo', 'illuminazione', 'rivestimenti', 'tessili', 'sanitari', 'complementi');
+create type public.unita_articolo as enum ('pz', 'mq', 'ml');
+create type public.stato_articolo as enum ('proposto', 'approvato', 'rifiutato', 'da_rivedere');
 
-create type public.stato_articolo as enum (
-  'bozza',            -- in preparazione, il cliente non lo vede ancora
-  'da_approvare',     -- inviato al cliente
-  'approvato',
-  'rifiutato',
-  'modifiche'         -- il cliente ha chiesto modifiche
-);
-
+-- 'modifiche' porta l'articolo in stato da_rivedere
 create type public.esito_risposta as enum ('approvato', 'rifiutato', 'modifiche');
 
 -- ---------------------------------------------------------------------------
@@ -45,7 +45,7 @@ create table public.profili (
   studio_id  uuid not null references public.studi (id) on delete cascade,
   email      text not null,
   nome       text check (nome is null or length(nome) <= 120),
-  ruolo      public.ruolo_profilo not null default 'membro',
+  ruolo      public.ruolo_profilo not null default 'designer',
   creato_il  timestamptz not null default now()
 );
 create index profili_studio_id_idx on public.profili (studio_id);
@@ -55,9 +55,10 @@ create table public.progetti (
   studio_id          uuid not null references public.studi (id) on delete cascade,
   nome               text not null check (length(trim(nome)) between 1 and 160),
   cliente_nome       text check (cliente_nome is null or length(cliente_nome) <= 160),
-  indirizzo          text check (indirizzo is null or length(indirizzo) <= 240),
-  budget_centesimi   bigint check (budget_centesimi is null or budget_centesimi >= 0),
-  palette            jsonb not null default '[]'::jsonb check (jsonb_typeof(palette) = 'array'),
+  indirizzo_cantiere text check (indirizzo_cantiere is null or length(indirizzo_cantiere) <= 240),
+  fase               public.fase_progetto not null default 'concept',
+  budget             integer check (budget is null or budget >= 0),
+  nascondi_fornitori boolean not null default false,
   creato_il          timestamptz not null default now(),
   aggiornato_il      timestamptz not null default now(),
   unique (id, studio_id)
@@ -69,15 +70,16 @@ create table public.stanze (
   studio_id          uuid not null,
   progetto_id        uuid not null,
   nome               text not null check (length(trim(nome)) between 1 and 120),
-  ordine             integer not null default 0,
-  budget_centesimi   bigint check (budget_centesimi is null or budget_centesimi >= 0),
+  codice             text check (codice is null or length(codice) <= 12),
+  posizione          integer not null default 0,
+  budget             integer check (budget is null or budget >= 0),
   creato_il          timestamptz not null default now(),
   aggiornato_il      timestamptz not null default now(),
   unique (id, progetto_id, studio_id),
   foreign key (progetto_id, studio_id)
     references public.progetti (id, studio_id) on delete cascade
 );
-create index stanze_progetto_idx on public.stanze (progetto_id, studio_id, ordine);
+create index stanze_progetto_idx on public.stanze (progetto_id, studio_id, posizione);
 
 create table public.articoli (
   id                        uuid primary key default gen_random_uuid(),
@@ -85,7 +87,7 @@ create table public.articoli (
   progetto_id               uuid not null,
   stanza_id                 uuid not null,
   nome                      text not null check (length(trim(nome)) between 1 and 160),
-  categoria                 text check (categoria is null or length(categoria) <= 80),
+  categoria                 public.categoria_articolo not null default 'arredo',
   fornitore                 text check (fornitore is null or length(fornitore) <= 120),
   codice                    text check (codice is null or length(codice) <= 80),
   larghezza_mm              integer check (larghezza_mm is null or larghezza_mm > 0),
@@ -94,12 +96,12 @@ create table public.articoli (
   finitura                  text check (finitura is null or length(finitura) <= 120),
   colore_campione           text check (colore_campione is null or colore_campione ~ '^#[0-9a-fA-F]{6}$'),
   foto_path                 text check (foto_path is null or length(foto_path) <= 400),
-  quantita                  numeric(12, 3) not null default 1 check (quantita > 0),
-  unita                     text not null default 'pz' check (length(trim(unita)) between 1 and 12),
-  prezzo_cliente_centesimi  bigint check (prezzo_cliente_centesimi is null or prezzo_cliente_centesimi >= 0),
-  stato                     public.stato_articolo not null default 'bozza',
+  quantita                  integer not null default 100 check (quantita > 0),  -- centesimi di unità
+  unita                     public.unita_articolo not null default 'pz',
+  prezzo_cliente_unitario   integer not null default 0 check (prezzo_cliente_unitario >= 0),
+  stato                     public.stato_articolo not null default 'proposto',
   nota_cliente              text check (nota_cliente is null or length(nota_cliente) <= 2000),
-  ordine                    integer not null default 0,
+  posizione                 integer not null default 0,
   creato_il                 timestamptz not null default now(),
   aggiornato_il             timestamptz not null default now(),
   unique (id, studio_id),
@@ -108,7 +110,7 @@ create table public.articoli (
     references public.stanze (id, progetto_id, studio_id) on delete cascade
 );
 create index articoli_progetto_idx on public.articoli (progetto_id, studio_id);
-create index articoli_stanza_idx on public.articoli (stanza_id, ordine);
+create index articoli_stanza_idx on public.articoli (stanza_id, posizione);
 
 create table public.link_clienti (
   id             uuid primary key default gen_random_uuid(),
@@ -200,6 +202,20 @@ grant execute on function private.sono_titolare() to authenticated;
 -- ---------------------------------------------------------------------------
 -- Primo accesso: crea lo studio e il profilo titolare
 -- ---------------------------------------------------------------------------
+-- "anna.maria_rossi@…" → "Studio di Anna Maria Rossi" (lo studio lo potrà rinominare)
+create function private.nome_provvisorio(email text)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  select 'Studio di ' || coalesce(
+    nullif(initcap(trim(regexp_replace(split_part(coalesce(email, ''), '@', 1), '[._+0-9-]+', ' ', 'g'))), ''),
+    'nuovo utente'
+  );
+$$;
+revoke all on function private.nome_provvisorio(text) from public, anon, authenticated;
+
 create function private.nuovo_utente()
 returns trigger
 language plpgsql
@@ -210,7 +226,7 @@ declare
   nuovo_studio uuid;
 begin
   insert into public.studi (nome)
-  values ('Studio di ' || coalesce(nullif(split_part(new.email, '@', 1), ''), 'nuovo utente'))
+  values (private.nome_provvisorio(new.email))
   returning id into nuovo_studio;
 
   insert into public.profili (id, studio_id, email, ruolo)

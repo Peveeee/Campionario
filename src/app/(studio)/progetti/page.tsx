@@ -7,8 +7,9 @@ import { BarraBudget } from "@/components/progetto/barra-budget";
 import { IndicatoreFase } from "@/components/progetto/indicatore-fase";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
-import { leggiArticoli, leggiProgetti, type ProgettoInElenco, type Sessione } from "@/dati/accesso";
-import { useArchivio, useSessione } from "@/dati/store";
+import { leggiArticoli, leggiProgetti, type ProgettoInElenco } from "@/dati/accesso";
+import { useSessioneAttiva } from "@/dati/hooks";
+import { useArchivio } from "@/dati/store";
 import { ETICHETTA_FASE } from "@/dominio/etichette";
 import { FASI, type Articolo, type Fase } from "@/dominio/tipi";
 import { formatEuroArrotondato, formatPercentuale } from "@/lib/formato";
@@ -17,7 +18,7 @@ type Filtro = Fase | "tutti";
 
 export default function Progetti() {
   const archivio = useArchivio();
-  const sessione = useSessione() as Sessione;
+  const sessione = useSessioneAttiva();
   const [filtro, setFiltro] = useState<Filtro>("tutti");
 
   const tutti = useMemo(() => leggiProgetti(archivio, sessione), [archivio, sessione]);

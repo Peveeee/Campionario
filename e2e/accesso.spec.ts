@@ -1,32 +1,52 @@
 import { expect, test } from "@playwright/test";
+import { accedi, emailNuova } from "./aiuti";
 
-test.beforeEach(async ({ page }) => {
-  await page.goto("/accedi");
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-});
-
-test("il titolare vede il margine delle forniture", async ({ page }) => {
-  await page.getByRole("button", { name: /Giulia Varesi/ }).click();
-  await expect(page).toHaveURL(/\/progetti$/);
-  await expect(page.getByRole("heading", { name: "Casa Ferraris" })).toBeVisible();
-  await expect(page.getByText("Margine forniture").first()).toBeVisible();
-});
-
-test("il designer non vede margini e il bagno risulta fuori budget", async ({ page }) => {
-  await page.getByRole("button", { name: /Tommaso Rinaldi/ }).click();
-  await expect(page.getByRole("heading", { name: "Casa Ferraris" })).toBeVisible();
-  await expect(page.getByText("Margine forniture")).toHaveCount(0);
-  await expect(page.getByText("Fuori budget").first()).toBeVisible();
-});
-
-test("cambiando ruolo cambia ciò che si vede", async ({ page }) => {
-  await page.getByRole("button", { name: /Tommaso Rinaldi/ }).click();
-  await page.getByRole("radio", { name: "Titolare" }).filter({ visible: true }).click();
-  await expect(page.getByText("Margine forniture").first()).toBeVisible();
-});
-
-test("senza sessione si torna all'accesso", async ({ page }) => {
+test("senza accesso si torna ad accedi, ricordando dove si voleva andare", async ({ page }) => {
   await page.goto("/progetti");
+  await expect(page).toHaveURL(/\/accedi\?poi=%2Fprogetti$/);
+  await expect(page.getByRole("heading", { name: "Entra nel tuo studio" })).toBeVisible();
+});
+
+test("un'email non valida dice cosa correggere", async ({ page }) => {
+  await page.goto("/accedi");
+  await page.getByLabel("Email").fill("giulia@");
+  await page.getByRole("button", { name: "Mandami il link" }).click();
+  await expect(page.getByText("Controlla l'indirizzo email.")).toBeVisible();
+  await expect(page.getByLabel("Email")).toHaveAttribute("aria-invalid", "true");
+});
+
+test("al primo accesso nasce lo studio e chi entra ne è titolare", async ({ page }) => {
+  await accedi(page, emailNuova("anna.maria_rossi"));
+  await expect(page).toHaveURL(/\/progetti$/);
+  await expect(page.getByRole("link", { name: "Studio di Anna Maria Rossi" }).first()).toBeVisible();
+});
+
+test("il link porta alla pagina chiesta prima dell'accesso", async ({ page }) => {
+  await page.goto("/progetti/qualsiasi/approvazioni");
+  await expect(page).toHaveURL(/poi=/);
+  await accedi(page, emailNuova("tommaso"), page.url());
+  await expect(page).toHaveURL(/\/progetti\/qualsiasi\/approvazioni$/);
+});
+
+test("un link non valido rimanda ad accedi con la spiegazione", async ({ page }) => {
+  await page.goto("/auth/confirm?code=non-valido");
+  await expect(page).toHaveURL(/\/accedi\?errore=link$/);
+  await expect(page.getByRole("alert").filter({ hasText: "Questo link non vale più" })).toBeVisible();
+});
+
+test("esci chiude la sessione", async ({ page }) => {
+  await accedi(page, emailNuova("esce"));
+  await expect(page).toHaveURL(/\/progetti$/);
+  await page.getByRole("button", { name: "Esci" }).filter({ visible: true }).click();
   await expect(page).toHaveURL(/\/accedi$/);
+  await page.goto("/progetti");
+  await expect(page).toHaveURL(/\/accedi\?poi=/);
+});
+
+test("lo studio di esempio entra con la sua email", async ({ page }, info) => {
+  // Una sola email per tutti i progetti di Playwright: la usiamo solo da desktop.
+  test.skip(info.project.name !== "desktop", "email condivisa, basta un viewport");
+  await accedi(page, "giulia@studiovaresi.example");
+  await expect(page.getByRole("link", { name: "Studio Varesi Interni" }).first()).toBeVisible();
+  await expect(page.getByText("Giulia Varesi")).toBeVisible();
 });

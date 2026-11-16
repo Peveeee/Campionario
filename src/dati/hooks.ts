@@ -3,11 +3,19 @@
 import { useMemo } from "react";
 import type { Archivio, Id } from "@/dominio/tipi";
 import { leggiProgetti, type Sessione } from "./accesso";
-import { modificaAnnullabile, useArchivio, useSessione } from "./store";
+import { useSessioneStudio } from "./sessione-studio";
+import { modificaAnnullabile, useArchivio } from "./store";
 
-/** Dentro l'area dello studio la sessione c'è sempre: il layout la garantisce. */
+/**
+ * Sessione per le schermate che leggono ancora l'archivio nel browser.
+ * Utente e ruolo sono quelli veri; lo studio è quello di esempio del prototipo
+ * finché la Fase 2 non porta progetti, stanze e articoli su Supabase.
+ */
+const STUDIO_PROTOTIPO = "studio-varesi";
+
 export function useSessioneAttiva(): Sessione {
-  return useSessione() as Sessione;
+  const { utente } = useSessioneStudio();
+  return useMemo(() => ({ utenteId: utente.id, studioId: STUDIO_PROTOTIPO, ruolo: utente.ruolo }), [utente]);
 }
 
 export function useProgetto(id: Id) {

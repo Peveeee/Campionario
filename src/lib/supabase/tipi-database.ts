@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "articoli": {
                   Row: {
-                    "aggiornato_il": string,"altezza_mm": number | null,"categoria": string | null,"codice": string | null,"colore_campione": string | null,"creato_il": string,"finitura": string | null,"fornitore": string | null,"foto_path": string | null,"id": string,"larghezza_mm": number | null,"nome": string,"nota_cliente": string | null,"ordine": number,"prezzo_cliente_centesimi": number | null,"profondita_mm": number | null,"progetto_id": string,"quantita": number,"stanza_id": string,"stato": Database["public"]['Enums']["stato_articolo"],"studio_id": string,"unita": string
+                    "aggiornato_il": string,"altezza_mm": number | null,"categoria": Database["public"]['Enums']["categoria_articolo"],"codice": string | null,"colore_campione": string | null,"creato_il": string,"finitura": string | null,"fornitore": string | null,"foto_path": string | null,"id": string,"larghezza_mm": number | null,"nome": string,"nota_cliente": string | null,"posizione": number,"prezzo_cliente_unitario": number,"profondita_mm": number | null,"progetto_id": string,"quantita": number,"stanza_id": string,"stato": Database["public"]['Enums']["stato_articolo"],"studio_id": string,"unita": Database["public"]['Enums']["unita_articolo"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "aggiornato_il"?: string,"altezza_mm"?: number | null,"categoria"?: string | null,"codice"?: string | null,"colore_campione"?: string | null,"creato_il"?: string,"finitura"?: string | null,"fornitore"?: string | null,"foto_path"?: string | null,"id"?: string,"larghezza_mm"?: number | null,"nome": string,"nota_cliente"?: string | null,"ordine"?: number,"prezzo_cliente_centesimi"?: number | null,"profondita_mm"?: number | null,"progetto_id": string,"quantita"?: number,"stanza_id": string,"stato"?: Database["public"]['Enums']["stato_articolo"],"studio_id": string,"unita"?: string
+                    "aggiornato_il"?: string,"altezza_mm"?: number | null,"categoria"?: Database["public"]['Enums']["categoria_articolo"],"codice"?: string | null,"colore_campione"?: string | null,"creato_il"?: string,"finitura"?: string | null,"fornitore"?: string | null,"foto_path"?: string | null,"id"?: string,"larghezza_mm"?: number | null,"nome": string,"nota_cliente"?: string | null,"posizione"?: number,"prezzo_cliente_unitario"?: number,"profondita_mm"?: number | null,"progetto_id": string,"quantita"?: number,"stanza_id": string,"stato"?: Database["public"]['Enums']["stato_articolo"],"studio_id": string,"unita"?: Database["public"]['Enums']["unita_articolo"]
                   }
                   Update: {
-                    "aggiornato_il"?: string,"altezza_mm"?: number | null,"categoria"?: string | null,"codice"?: string | null,"colore_campione"?: string | null,"creato_il"?: string,"finitura"?: string | null,"fornitore"?: string | null,"foto_path"?: string | null,"id"?: string,"larghezza_mm"?: number | null,"nome"?: string,"nota_cliente"?: string | null,"ordine"?: number,"prezzo_cliente_centesimi"?: number | null,"profondita_mm"?: number | null,"progetto_id"?: string,"quantita"?: number,"stanza_id"?: string,"stato"?: Database["public"]['Enums']["stato_articolo"],"studio_id"?: string,"unita"?: string
+                    "aggiornato_il"?: string,"altezza_mm"?: number | null,"categoria"?: Database["public"]['Enums']["categoria_articolo"],"codice"?: string | null,"colore_campione"?: string | null,"creato_il"?: string,"finitura"?: string | null,"fornitore"?: string | null,"foto_path"?: string | null,"id"?: string,"larghezza_mm"?: number | null,"nome"?: string,"nota_cliente"?: string | null,"posizione"?: number,"prezzo_cliente_unitario"?: number,"profondita_mm"?: number | null,"progetto_id"?: string,"quantita"?: number,"stanza_id"?: string,"stato"?: Database["public"]['Enums']["stato_articolo"],"studio_id"?: string,"unita"?: Database["public"]['Enums']["unita_articolo"]
                   }
                   Relationships: [
                     {
@@ -85,14 +85,14 @@ isOneToOne: false
                   ]
                 },"progetti": {
                   Row: {
-                    "aggiornato_il": string,"budget_centesimi": number | null,"cliente_nome": string | null,"creato_il": string,"id": string,"indirizzo": string | null,"nome": string,"palette": NonNullable<Json>,"studio_id": string
+                    "aggiornato_il": string,"budget": number | null,"cliente_nome": string | null,"creato_il": string,"fase": Database["public"]['Enums']["fase_progetto"],"id": string,"indirizzo_cantiere": string | null,"nascondi_fornitori": boolean,"nome": string,"studio_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "aggiornato_il"?: string,"budget_centesimi"?: number | null,"cliente_nome"?: string | null,"creato_il"?: string,"id"?: string,"indirizzo"?: string | null,"nome": string,"palette"?: NonNullable<Json>,"studio_id": string
+                    "aggiornato_il"?: string,"budget"?: number | null,"cliente_nome"?: string | null,"creato_il"?: string,"fase"?: Database["public"]['Enums']["fase_progetto"],"id"?: string,"indirizzo_cantiere"?: string | null,"nascondi_fornitori"?: boolean,"nome": string,"studio_id": string
                   }
                   Update: {
-                    "aggiornato_il"?: string,"budget_centesimi"?: number | null,"cliente_nome"?: string | null,"creato_il"?: string,"id"?: string,"indirizzo"?: string | null,"nome"?: string,"palette"?: NonNullable<Json>,"studio_id"?: string
+                    "aggiornato_il"?: string,"budget"?: number | null,"cliente_nome"?: string | null,"creato_il"?: string,"fase"?: Database["public"]['Enums']["fase_progetto"],"id"?: string,"indirizzo_cantiere"?: string | null,"nascondi_fornitori"?: boolean,"nome"?: string,"studio_id"?: string
                   }
                   Relationships: [
                     {
@@ -131,14 +131,14 @@ isOneToOne: false
                   ]
                 },"stanze": {
                   Row: {
-                    "aggiornato_il": string,"budget_centesimi": number | null,"creato_il": string,"id": string,"nome": string,"ordine": number,"progetto_id": string,"studio_id": string
+                    "aggiornato_il": string,"budget": number | null,"codice": string | null,"creato_il": string,"id": string,"nome": string,"posizione": number,"progetto_id": string,"studio_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "aggiornato_il"?: string,"budget_centesimi"?: number | null,"creato_il"?: string,"id"?: string,"nome": string,"ordine"?: number,"progetto_id": string,"studio_id": string
+                    "aggiornato_il"?: string,"budget"?: number | null,"codice"?: string | null,"creato_il"?: string,"id"?: string,"nome": string,"posizione"?: number,"progetto_id": string,"studio_id": string
                   }
                   Update: {
-                    "aggiornato_il"?: string,"budget_centesimi"?: number | null,"creato_il"?: string,"id"?: string,"nome"?: string,"ordine"?: number,"progetto_id"?: string,"studio_id"?: string
+                    "aggiornato_il"?: string,"budget"?: number | null,"codice"?: string | null,"creato_il"?: string,"id"?: string,"nome"?: string,"posizione"?: number,"progetto_id"?: string,"studio_id"?: string
                   }
                   Relationships: [
                     {
@@ -172,7 +172,7 @@ isOneToOne: false
             [_ in never]: never
           }
           Enums: {
-            "esito_risposta": "approvato"|"rifiutato"|"modifiche","ruolo_profilo": "titolare"|"membro","stato_articolo": "bozza"|"da_approvare"|"approvato"|"rifiutato"|"modifiche"
+            "categoria_articolo": "arredo"|"illuminazione"|"rivestimenti"|"tessili"|"sanitari"|"complementi","esito_risposta": "approvato"|"rifiutato"|"modifiche","fase_progetto": "concept"|"progetto"|"forniture"|"cantiere"|"chiuso","ruolo_profilo": "titolare"|"designer","stato_articolo": "proposto"|"approvato"|"rifiutato"|"da_rivedere","unita_articolo": "pz"|"mq"|"ml"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -292,7 +292,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "esito_risposta": ["approvato", "rifiutato", "modifiche"],"ruolo_profilo": ["titolare", "membro"],"stato_articolo": ["bozza", "da_approvare", "approvato", "rifiutato", "modifiche"]
+            "categoria_articolo": ["arredo", "illuminazione", "rivestimenti", "tessili", "sanitari", "complementi"],"esito_risposta": ["approvato", "rifiutato", "modifiche"],"fase_progetto": ["concept", "progetto", "forniture", "cantiere", "chiuso"],"ruolo_profilo": ["titolare", "designer"],"stato_articolo": ["proposto", "approvato", "rifiutato", "da_rivedere"],"unita_articolo": ["pz", "mq", "ml"]
           }
         }
 } as const

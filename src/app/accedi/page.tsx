@@ -1,94 +1,71 @@
-"use client";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { percorsoSicuro } from "@/lib/supabase/percorso";
+import { creaClientServer } from "@/lib/supabase/server";
+import { ModuloAccesso } from "./modulo-accesso";
 
-import { useRouter } from "next/navigation";
-import { IconaFreccia } from "@/components/ui/icone";
-import { entraCome, useArchivio } from "@/dati/store";
-import { ETICHETTA_RUOLO } from "@/dominio/etichette";
-import type { Utente } from "@/dominio/tipi";
+export const metadata: Metadata = { title: "Accedi" };
 
-const DESCRIZIONE_RUOLO = {
-  titolare: "Vede tutto lo studio, compresi costi, ricarichi e margini.",
-  designer: "Gestisce progetti, schedari e libreria. Inserisce i costi ma non li rilegge.",
-} as const;
+/** Finiture della tavola materiali, dallo studio di esempio. */
+const TAVOLA = [
+  { finitura: "Bouclé avena", colore: "#D9D1C3" },
+  { finitura: "Rovere termotrattato", colore: "#6B4A33" },
+  { finitura: "Velluto salvia", colore: "#8E9B82" },
+  { finitura: "Ottone brunito", colore: "#8C6A3F" },
+  { finitura: "Grigio cenere", colore: "#9A968D" },
+  { finitura: "Verde bottiglia", colore: "#2F4A3C" },
+  { finitura: "Noce canaletto", colore: "#5A3D2B" },
+  { finitura: "Lino naturale", colore: "#E4DDCF" },
+  { finitura: "Vetro ambra", colore: "#C08A3E" },
+];
 
-/** Finiture della tavola materiali in apertura, prese dallo schedario di esempio. */
-const TAVOLA = ["a01", "a02", "a03", "a05", "a12", "a13", "a09", "a06", "a18"];
+const ERRORI: Record<string, string> = {
+  link: "Questo link non vale più: è scaduto o è già stato usato. Chiedine uno nuovo qui sotto.",
+  profilo: "Non troviamo lo studio collegato a questa email. Chiedi un nuovo link; se succede ancora, scrivi al supporto.",
+};
 
-export default function Accedi() {
-  const archivio = useArchivio();
-  const router = useRouter();
-  const studio = archivio.studi[0];
-  const campioni = TAVOLA.map((id) => archivio.articoli.find((a) => a.id === id)).filter((a) => a !== undefined);
+export default async function Accedi({
+  searchParams,
+}: {
+  searchParams: Promise<{ poi?: string; errore?: string }>;
+}) {
+  const { poi, errore } = await searchParams;
+  const destinazione = percorsoSicuro(poi);
 
-  function entra(utente: Utente) {
-    entraCome(utente);
-    router.push("/cruscotto");
-  }
+  const supabase = await creaClientServer();
+  const { data } = await supabase.auth.getClaims();
+  if (data?.claims && errore !== "profilo") redirect(destinazione);
 
   return (
-    <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
-      <section className="flex flex-col justify-between gap-12 bg-nebbia px-6 py-10 sm:px-12 lg:px-16 lg:py-14">
+    <main className="grid min-h-dvh grid-rows-[auto_1fr] lg:grid-cols-[1.1fr_1fr] lg:grid-rows-none">
+      <section className="flex flex-col gap-5 bg-nebbia px-6 pt-6 pb-0 sm:px-12 lg:justify-between lg:gap-12 lg:px-16 lg:py-14">
         <p className="titolo-display text-xl">Campionario</p>
 
-        <div className="grid w-full max-w-[26rem] grid-cols-3 gap-2 sm:gap-3" aria-hidden="true">
-          {campioni.map((a, i) => (
-            <figure key={a.id} className={i % 3 === 1 ? "translate-y-6" : undefined}>
-              <div className="aspect-square shadow-etichetta" style={{ backgroundColor: a.coloreCampione }} />
-              <figcaption className="mt-2 truncate text-xs text-pietra-scura">{a.finitura}</figcaption>
+        {/* Da desktop: la tavola dei materiali. */}
+        <div className="hidden w-full max-w-[26rem] grid-cols-3 gap-3 lg:grid" aria-hidden="true">
+          {TAVOLA.map((c, i) => (
+            <figure key={c.finitura} className={i % 3 === 1 ? "translate-y-6" : undefined}>
+              <div className="aspect-square shadow-etichetta" style={{ backgroundColor: c.colore }} />
+              <figcaption className="mt-2 truncate text-xs text-pietra-scura">{c.finitura}</figcaption>
             </figure>
           ))}
         </div>
 
-        <p className="max-w-md text-lg text-grafite">
-          Lo schedario di ogni progetto, stanza per stanza, dalla proposta al cliente fino all&apos;ordine al fornitore.
+        <p className="hidden max-w-md text-lg text-grafite lg:block">
+          Lo schedario di ogni progetto, stanza per stanza, con le approvazioni del cliente dal telefono.
         </p>
+
+        {/* Da telefono: la stessa tavola, ridotta a una striscia di campioni. */}
+        <div className="-mx-6 flex h-3 sm:-mx-12 lg:hidden" aria-hidden="true">
+          {TAVOLA.map((c) => (
+            <span key={c.finitura} className="h-full flex-1" style={{ backgroundColor: c.colore }} />
+          ))}
+        </div>
       </section>
 
-      <section className="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-20">
+      <section className="flex flex-col px-6 pt-10 pb-12 sm:px-12 lg:justify-center lg:px-20 lg:py-12">
         <div className="mx-auto w-full max-w-md">
-          <h1 className="titolo-display text-3xl sm:text-4xl">Entra in {studio?.nome ?? "studio"}</h1>
-          <p className="mt-3 text-pietra-scura">
-            Scegli con quale ruolo provare il prototipo. Puoi cambiarlo in qualsiasi momento dal menu.
-          </p>
-
-          <ul className="mt-10 flex flex-col gap-3">
-            {archivio.utenti.map((u) => (
-              <li key={u.id}>
-                <button
-                  type="button"
-                  onClick={() => entra(u)}
-                  className="group flex w-full items-center gap-4 rounded-md border border-linea-forte p-4 text-left transition-colors hover:border-grafite/50 hover:bg-nebbia"
-                >
-                  <span className="titolo-display flex size-12 shrink-0 items-center justify-center rounded-full bg-avio-velo text-lg text-avio">
-                    {u.nome.split(" ").map((p) => p[0]).join("")}
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="font-medium">
-                      {u.nome}
-                      <span className="ml-2 text-sm font-normal text-pietra-scura">{ETICHETTA_RUOLO[u.ruolo]}</span>
-                    </span>
-                    <span className="text-sm text-pietra-scura">{DESCRIZIONE_RUOLO[u.ruolo]}</span>
-                  </span>
-                  <IconaFreccia className="text-pietra transition-transform group-hover:translate-x-0.5 group-hover:text-grafite" />
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-6 border-t border-linea pt-6">
-            <p className="text-sm text-pietra-scura">Oppure guarda cosa riceve il cliente sul telefono:</p>
-            <button
-              type="button"
-              onClick={() => router.push("/cliente/fx7k2m9qv4rt8wz3")}
-              className="mt-2 text-avio underline-offset-4 hover:underline"
-            >
-              Apri il link di Elena e Marco Ferraris
-            </button>
-          </div>
-
-          <p className="mt-8 text-sm text-pietra-scura">
-            Prototipo senza password: i dati restano in questo browser e si possono ripristinare dal menu.
-          </p>
+          <ModuloAccesso poi={destinazione} errore={errore ? (ERRORI[errore] ?? ERRORI.link!) : null} />
         </div>
       </section>
     </main>

@@ -6,24 +6,34 @@ Questo è il **prototipo dimostrativo (MVP per i soci)**: cruscotto, progetti, s
 
 ## Avvio locale
 
-Serve Node.js 20.9 o successivo.
+Servono Node.js 20.9 o successivo e Docker in esecuzione.
 
 ```bash
 npm install
+npm run db:start          # Supabase locale: Postgres, Auth, Storage, Mailpit
+npm run db:reset          # applica supabase/migrations e carica supabase/seed.sql
+cp .env.example .env.local
 npm run dev
 ```
 
-Apri http://localhost:3000. Scegli se entrare come **titolare** (Giulia Varesi) o come **designer** (Tommaso Rinaldi). Il ruolo si cambia in qualsiasi momento dal menu.
+In `.env.local` metti i valori stampati da `npx supabase status` (`API_URL` e `PUBLISHABLE_KEY`).
+Se Docker non riesce a scaricare le immagini da public.ecr.aws, anteponi
+`SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` a `npm run db:start`.
+
+Apri http://localhost:3000 ed entra con la tua email: il magic link arriva su Mailpit,
+http://127.0.0.1:54324. Al primo accesso con un'email nuova nasce uno studio e tu ne sei titolare.
+Lo studio di esempio entra con `giulia@studiovaresi.example` (titolare) o
+`tommaso@studiovaresi.example` (designer).
 
 ### Variabili d'ambiente
-
-Il prototipo non ne usa. Con il backend serviranno:
 
 | Variabile | A cosa serve |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Indirizzo del progetto Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chiave pubblica |
-| `SUPABASE_SERVICE_ROLE_KEY` | Solo lato server: link cliente e invio inviti |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chiave pubblica (publishable); i dati li protegge RLS |
+| `NEXT_PUBLIC_SITE_URL` | URL pubblico del sito, usato nel magic link (in locale si può omettere) |
+
+Nessuna chiave segreta serve all'app: il cliente passerà da funzioni Postgres `security definer`.
 
 ## Comandi
 
@@ -32,10 +42,26 @@ Il prototipo non ne usa. Con il backend serviranno:
 | `npm run dev` | Server di sviluppo |
 | `npm run build` / `npm start` | Build e avvio di produzione |
 | `npm test` | Test unitari (Vitest): prezzi, margini, budget, acconti, formattazione, accesso per ruolo |
-| `npm run test:e2e` | Test end-to-end (Playwright), su desktop e telefono |
+| `npm run test:e2e` | Test end-to-end (Playwright), su desktop e telefono; serve Supabase locale avviato |
 | `npm run typecheck` | Controllo dei tipi |
+| `npm run test:db` | Test delle policy RLS (pgTAP), con Supabase locale avviato |
+| `npm run db:tipi` | Rigenera i tipi TypeScript dal database locale |
+| `npx tsx scripts/genera-seed.ts` | Rigenera `supabase/seed.sql` da `src/dati/seed.ts` |
 
 La prima volta, prima di `npm run test:e2e`, esegui `npx playwright install chromium`.
+
+## Super mini MVP (in corso)
+
+Obiettivo: uno studio vero lo usa su un progetto vero, dall'accesso con email alle risposte del cliente.
+Ordini, margini, varianti e cruscotto restano nel codice ma fuori dalla navigazione.
+
+- **Fase 1, fatta:** schema Supabase con RLS (`supabase/migrations/`), test delle policy
+  (`supabase/tests/database/`), seed dallo studio di esempio, accesso con magic link
+  (`src/lib/supabase/`, `src/proxy.ts`, `src/app/auth/confirm/`).
+- **Fase 2:** progetti, stanze e articoli su Supabase, foto su Storage. Fino ad allora le schermate
+  dei progetti leggono ancora l'archivio di esempio nel browser.
+- **Fase 3:** link e risposte del cliente.
+- **Fase 4:** online su Supabase cloud e Vercel.
 
 ## Struttura
 

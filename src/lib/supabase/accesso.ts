@@ -46,6 +46,21 @@ export async function inviaMagicLink(
   return { stato: "inviato", email };
 }
 
+export type EsitoCodice = { messaggio: string } | null;
+
+/** Entra con il codice di 6 cifre dell'email: funziona anche da un altro dispositivo. */
+export async function entraConCodice(_precedente: EsitoCodice, dati: FormData): Promise<EsitoCodice> {
+  const email = String(dati.get("email") ?? "").trim().toLowerCase();
+  const codice = String(dati.get("codice") ?? "").replace(/\s/g, "");
+  if (!/^\d{6}$/.test(codice)) return { messaggio: "Il codice ha 6 cifre: controlla l'email." };
+
+  const supabase = await creaClientServer();
+  const { error } = await supabase.auth.verifyOtp({ email, token: codice, type: "email" });
+  if (error) return { messaggio: "Codice sbagliato o scaduto. Controlla l'ultima email o chiedine uno nuovo." };
+
+  redirect(percorsoSicuro(dati.get("poi")));
+}
+
 export async function esci() {
   const supabase = await creaClientServer();
   await supabase.auth.signOut();

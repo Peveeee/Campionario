@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { accedi, emailNuova } from "./aiuti";
+import { accedi, chiediCodice, emailNuova } from "./aiuti";
 
 test("senza accesso si torna ad accedi, ricordando dove si voleva andare", async ({ page }) => {
   await page.goto("/progetti");
@@ -10,7 +10,7 @@ test("senza accesso si torna ad accedi, ricordando dove si voleva andare", async
 test("un'email non valida dice cosa correggere", async ({ page }) => {
   await page.goto("/accedi");
   await page.getByLabel("Email").fill("giulia@");
-  await page.getByRole("button", { name: "Mandami il link" }).click();
+  await page.getByRole("button", { name: "Mandami il codice" }).click();
   await expect(page.getByText("Controlla l'indirizzo email.")).toBeVisible();
   await expect(page.getByLabel("Email")).toHaveAttribute("aria-invalid", "true");
 });
@@ -26,6 +26,19 @@ test("il link porta alla pagina chiesta prima dell'accesso", async ({ page }) =>
   await expect(page).toHaveURL(/poi=/);
   await accedi(page, emailNuova("tommaso"), page.url());
   await expect(page).toHaveURL(/\/progetti\/qualsiasi\/approvazioni$/);
+});
+
+test("anche il link nell'email fa entrare, dallo stesso browser", async ({ page }) => {
+  const { link } = await chiediCodice(page, emailNuova("link"));
+  await page.goto(link);
+  await expect(page).toHaveURL(/\/progetti$/);
+});
+
+test("un codice sbagliato dice cosa fare", async ({ page }) => {
+  await chiediCodice(page, emailNuova("codice"));
+  await page.getByLabel("Codice dell'email").fill("000000");
+  await page.getByRole("button", { name: "Entra", exact: true }).click();
+  await expect(page.getByText("Codice sbagliato o scaduto")).toBeVisible();
 });
 
 test("un link non valido rimanda ad accedi con la spiegazione", async ({ page }) => {

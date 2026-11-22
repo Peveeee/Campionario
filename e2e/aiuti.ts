@@ -15,7 +15,7 @@ export async function leggiEmailAccesso(email: string, dopo: Date): Promise<{ co
     const nuovo = messages.find((m) => new Date(m.Created) >= dopo);
     if (nuovo) {
       const { HTML } = (await (await fetch(`${MAILPIT}/api/v1/message/${nuovo.ID}`)).json()) as { HTML: string };
-      const codice = HTML.match(/>\s*(\d{6})\s*</)?.[1];
+      const codice = HTML.match(/>\s*(\d{6,8})\s*</)?.[1];
       const link = HTML.match(/href="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
       if (codice && link) return { codice, link };
     }

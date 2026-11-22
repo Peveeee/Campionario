@@ -34,10 +34,10 @@ export function ModuloAccesso({ poi, errore }: { poi: string; errore: string | n
                 name="codice"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
+                maxLength={8}
                 pattern="[0-9]*"
                 autoFocus
-                placeholder="000000"
+                placeholder="Codice"
                 className="cifre h-14 text-center text-2xl tracking-[0.4em]"
               />
             )}

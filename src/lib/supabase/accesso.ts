@@ -48,11 +48,11 @@ export async function inviaMagicLink(
 
 export type EsitoCodice = { messaggio: string } | null;
 
-/** Entra con il codice di 6 cifre dell'email: funziona anche da un altro dispositivo. */
+/** Entra con il codice numerico dell'email (6 cifre in locale, fino a 8 nel cloud): funziona anche da un altro dispositivo. */
 export async function entraConCodice(_precedente: EsitoCodice, dati: FormData): Promise<EsitoCodice> {
   const email = String(dati.get("email") ?? "").trim().toLowerCase();
   const codice = String(dati.get("codice") ?? "").replace(/\s/g, "");
-  if (!/^\d{6}$/.test(codice)) return { messaggio: "Il codice ha 6 cifre: controlla l'email." };
+  if (!/^\d{6,8}$/.test(codice)) return { messaggio: "Scrivi tutte le cifre del codice che trovi nell'email." };
 
   const supabase = await creaClientServer();
   const { error } = await supabase.auth.verifyOtp({ email, token: codice, type: "email" });
